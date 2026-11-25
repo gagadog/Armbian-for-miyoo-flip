@@ -1,0 +1,13 @@
+# /boot/armbianEnv.txt — Miyoo Flip (RK3566)
+#
+# 关键一行：换成 Miyoo Flip 的设备树
+fdtfile=rockchip/rk3566-miyoo-flip.dtb
+
+# 调试串口：UART2 @ 1.5 Mbaud（板上有焊盘）
+console=both
+verbosity=1
+extraargs=console=ttyS2,1500000n8 console=tty0
+
+# 如果你的镜像默认 rootdev / overlay 设置不同，保留原镜像的值即可
+# rootdev=UUID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+# rootfstype=ext4

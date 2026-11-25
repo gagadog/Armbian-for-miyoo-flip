@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Miyoo Flip — bottom USB-C port in HOST role.
+ *
+ * Identical to rk3566-miyoo-flip-armbian.dts except that usb_host0_xhci uses
+ * dr_mode = "otg" instead of "peripheral", so the bottom port can power and
+ * accept USB devices (sticks, keyboards, hubs) instead of acting as a gadget.
+ *
+ * Switch with:  sudo miyoo-usb-role host    (then reboot)
+ */
+
+#define MIYOO_USB_HOST 1
+#include "rk3566-miyoo-flip-armbian.dts"

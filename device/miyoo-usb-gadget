@@ -1,0 +1,159 @@
+#!/bin/sh
+# Miyoo Flip USB gadget supervisor.
+#
+# Exposes the bottom USB-C port as a composite device: CDC-ACM serial (rescue
+# console on ttyGS0) plus CDC-NCM Ethernet (usb0).
+#
+# Why NCM and not RNDIS: Windows 11 24H2 removed the in-box RNDIS driver, so an
+# RNDIS function fails to install (CM_PROB_FAILED_INSTALL).  CDC-NCM is still
+# supported natively there, and Linux/macOS handle it too.
+#
+# Why we own the UDC: the stock image loads legacy g_serial, which grabs the
+# only UDC and enumerates as 0525:a4a7 -- a bare serial port, so no network.
+G=/sys/kernel/config/usb_gadget/miyoo
+ADDR=192.168.42.1/24
+LOG=/var/log/miyoo-gadget.log
+
+log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >>"$LOG"; }
+
+# configfs only allows rmdir on empty directories, so every file and symlink
+# must go first; a half-removed gadget makes later binds fail with EINVAL.
+teardown() {
+    [ -d "$G" ] || return 0
+    echo "" > "$G/UDC" 2>/dev/null
+    for l in "$G"/configs/*/acm.* "$G"/configs/*/ncm.* "$G"/configs/*/rndis.* "$G"/os_desc/configs; do
+        [ -L "$l" ] && rm -f "$l"
+    done
+    rm -f "$G"/configs/*/strings/0x409/* 2>/dev/null
+    rm -f "$G"/strings/0x409/* 2>/dev/null
+    rmdir "$G"/configs/*/strings/0x409 2>/dev/null
+    rmdir "$G"/configs/* 2>/dev/null
+    rmdir "$G"/functions/* 2>/dev/null
+    rmdir "$G"/strings/0x409 2>/dev/null
+    rmdir "$G"/strings 2>/dev/null
+    rmdir "$G"/os_desc 2>/dev/null
+    rmdir "$G" 2>/dev/null
+    log "teardown done (remains: $([ -d "$G" ] && echo yes || echo no))"
+}
+
+skeleton_ok() {
+    [ -d "$G/configs/c.1" ] &&
+    [ -d "$G/functions/acm.GS0" ] &&
+    [ -d "$G/functions/ncm.usb0" ] &&
+    [ -L "$G/configs/c.1/acm.GS0" ] &&
+    [ -L "$G/configs/c.1/ncm.usb0" ]
+}
+
+setup() {
+    [ -d /sys/kernel/config/usb_gadget ] || return 1
+    modprobe libcomposite 2>/dev/null
+    modprobe usb_f_ncm 2>/dev/null
+    modprobe usb_f_acm 2>/dev/null
+
+    if [ -d "$G" ] && ! skeleton_ok; then
+        log "stale/incomplete gadget, rebuilding"
+        teardown
+    fi
+    skeleton_ok && return 0
+
+    mkdir -p "$G" || return 1
+    echo 0x1d6b > "$G/idVendor"
+    echo 0x0104 > "$G/idProduct"
+    echo 0x0200 > "$G/bcdUSB"
+    echo 0x0100 > "$G/bcdDevice"
+
+    mkdir -p "$G/strings/0x409"
+    echo Miyoo        > "$G/strings/0x409/manufacturer"
+    echo "Miyoo Flip" > "$G/strings/0x409/product"
+    echo flip0001     > "$G/strings/0x409/serialnumber"
+
+    mkdir -p "$G/configs/c.1/strings/0x409"
+    echo "ACM+NCM" > "$G/configs/c.1/strings/0x409/configuration"
+    echo 250      > "$G/configs/c.1/MaxPower"
+
+    mkdir -p "$G/functions/acm.GS0"
+    mkdir -p "$G/functions/ncm.usb0"
+    echo 02:00:00:00:00:02 > "$G/functions/ncm.usb0/dev_addr"  2>/dev/null
+    echo 02:00:00:00:00:01 > "$G/functions/ncm.usb0/host_addr" 2>/dev/null
+
+    ln -sf "$G/functions/acm.GS0" "$G/configs/c.1/" 2>/dev/null
+    ln -sf "$G/functions/ncm.usb0" "$G/configs/c.1/" 2>/dev/null
+
+    if skeleton_ok; then
+        log "gadget skeleton created (acm+ncm)"
+        return 0
+    fi
+    log "ERROR: skeleton incomplete, dirs: $(ls "$G/functions" 2>/dev/null | tr '\n' ' ')"
+    return 1
+}
+
+ensure_getty() {
+    # The ACM tty index is not stable: ttyGS0 may already have been taken by
+    # the legacy g_serial instance, in which case ours shows up as ttyGS1.
+    t=$(ls /dev/ttyGS* 2>/dev/null | head -1)
+    [ -n "$t" ] || return 0
+    u="serial-getty@$(basename "$t").service"
+    if ! systemctl is-active --quiet "$u"; then
+        systemctl start "$u" 2>/dev/null
+        log "started $u"
+    fi
+}
+
+tick() {
+    setup || return 0
+
+    udc=$(ls /sys/class/udc 2>/dev/null | head -1)
+    [ -z "$udc" ] && return 0
+
+    cur=$(cat "$G/UDC" 2>/dev/null)
+    if [ "$cur" != "$udc" ]; then
+        if lsmod 2>/dev/null | grep -q '^g_serial '; then
+            log "evicting g_serial"
+            systemctl stop serial-getty@ttyGS0.service 2>/dev/null
+            rmmod g_serial 2>/dev/null
+            sleep 1
+        fi
+        if echo "$udc" > "$G/UDC" 2>/dev/null; then
+            log "bound $udc"
+            sleep 2
+            echo 0 > /run/miyoo-gadget.fail
+        else
+            log "ERROR: bind to $udc failed"
+        fi
+    fi
+
+    ensure_getty
+
+    if [ -d /sys/class/net/usb0 ]; then
+        ip link set usb0 up 2>/dev/null
+        ip addr add "$ADDR" dev usb0 2>/dev/null
+        if [ ! -f /run/miyoo-usb0.ready ]; then
+            : > /run/miyoo-usb0.ready
+            log "usb0 up with $ADDR"
+            systemctl try-restart dnsmasq.service 2>/dev/null &
+        fi
+        echo 0 > /run/miyoo-gadget.fail
+    else
+        rm -f /run/miyoo-usb0.ready 2>/dev/null
+        n=$(cat /run/miyoo-gadget.fail 2>/dev/null || echo 0)
+        n=$((n + 1))
+        echo "$n" > /run/miyoo-gadget.fail
+        # If the bind never yields a usable interface, hand the UDC back to
+        # g_serial so the machine stays reachable instead of becoming a brick.
+        if [ "$n" -ge 15 ] && ! lsmod 2>/dev/null | grep -q '^g_serial '; then
+            log "no usb0 after ~45s, reverting to g_serial"
+            systemctl stop miyoo-usb-gadget.service 2>/dev/null
+            echo "" > "$G/UDC" 2>/dev/null
+            modprobe g_serial 2>/dev/null
+            sleep 1
+            systemctl start serial-getty@ttyGS0.service 2>/dev/null
+            exit 0
+        fi
+    fi
+}
+
+case "${1:-loop}" in
+    once)  tick ;;
+    reset) teardown; setup; tick ;;
+    loop)  while :; do tick; sleep 3; done ;;
+esac

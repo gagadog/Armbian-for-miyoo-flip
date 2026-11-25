@@ -1,0 +1,15 @@
+[Unit]
+Description=Miyoo Flip USB composite gadget (ACM console + RNDIS network)
+After=systemd-modules-load.service sys-kernel-config.mount
+Wants=sys-kernel-config.mount
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/miyoo-usb-gadget loop
+Restart=always
+RestartSec=5
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

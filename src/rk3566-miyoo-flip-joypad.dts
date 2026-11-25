@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Miyoo Flip — variant with the ROCKNIX singleadc joypad node.
+ *
+ * Uses rocknix-singleadc-joypad instead of gpio-keys, which brings up the two
+ * analog sticks (Miyoo UART1 serial protocol) in addition to the 17 buttons.
+ * Requires the out-of-tree module built by scripts/joypad-build2.sh.
+ */
+
+#define MIYOO_JOYPAD 1
+#include "rk3566-miyoo-flip-armbian.dts"

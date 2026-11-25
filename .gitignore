@@ -1,0 +1,29 @@
+# 大文件：镜像不进 git（单文件 766 MiB，GitHub/Gitee 单文件上限 100 MB）
+# 走 Releases 或网盘；整包压缩上传到网盘时不受此文件影响
+image/
+*.img
+*.img.xz
+*.img.gz
+*.tar
+*.part
+
+# 私钥：绝对不能提交（目录已删除，这里只是保险）
+keys/
+*.pem
+id_ed25519
+id_rsa
+
+# 构建中间产物
+out/*.ko
+out/backup-sdcard/
+module/*.o
+module/*.ko
+module/.*.cmd
+module/*.mod
+module/*.mod.c
+module/modules.order
+module/Module.symvers
+
+# 本地临时
+*.log
+__pycache__/

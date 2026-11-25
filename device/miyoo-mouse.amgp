@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<joystick configversion="24">
+  <!-- left stick -> pointer, right stick -> wheel -->
+  <stickAxisAssociation index="1" xAxis="1" yAxis="2"/>
+  <stickAxisAssociation index="2" xAxis="3" yAxis="4"/>
+
+  <sets>
+    <set index="1">
+      <!-- left stick: move the pointer -->
+      <stick index="1">
+        <deadZone>8000</deadZone>
+        <maxZone>32000</maxZone>
+        <diagonalRange>45</diagonalRange>
+        <stickbutton index="1"><slots><slot><code>1</code><mode>mousemovement</mode></slot></slots></stickbutton>
+        <stickbutton index="2"><slots><slot><code>2</code><mode>mousemovement</mode></slot></slots></stickbutton>
+        <stickbutton index="3"><slots><slot><code>3</code><mode>mousemovement</mode></slot></slots></stickbutton>
+        <stickbutton index="4"><slots><slot><code>4</code><mode>mousemovement</mode></slot></slots></stickbutton>
+      </stick>
+
+      <!-- right stick: wheel up / down -->
+      <stick index="2">
+        <deadZone>8000</deadZone>
+        <maxZone>32000</maxZone>
+        <diagonalRange>45</diagonalRange>
+        <stickbutton index="1"><slots><slot><code>4</code><mode>mousebutton</mode></slot></slots></stickbutton>
+        <stickbutton index="2"><slots><slot><code>5</code><mode>mousebutton</mode></slot></slots></stickbutton>
+      </stick>
+
+      <!-- A = left click, B = right click -->
+      <button index="1"><slots><slot><code>1</code><mode>mousebutton</mode></slot></slots></button>
+      <button index="2"><slots><slot><code>3</code><mode>mousebutton</mode></slot></slots></button>
+
+      <!-- X = Esc, Y = Enter -->
+      <button index="3"><slots><slot><code>16777216</code><mode>keyboard</mode></slot></slots></button>
+      <button index="4"><slots><slot><code>16777220</code><mode>keyboard</mode></slot></slots></button>
+
+      <!-- D-pad = arrow keys (useful in lists/menus) -->
+      <button index="14"><slots><slot><code>16777235</code><mode>keyboard</mode></slot></slots></button>
+      <button index="15"><slots><slot><code>16777237</code><mode>keyboard</mode></slot></slots></button>
+      <button index="16"><slots><slot><code>16777234</code><mode>keyboard</mode></slot></slots></button>
+      <button index="17"><slots><slot><code>16777236</code><mode>keyboard</mode></slot></slots></button>
+
+      <!-- L1 / R1 = wheel, L2 / R2 = PageUp / PageDown -->
+      <button index="5"><slots><slot><code>4</code><mode>mousebutton</mode></slot></slots></button>
+      <button index="6"><slots><slot><code>5</code><mode>mousebutton</mode></slot></slots></button>
+      <button index="7"><slots><slot><code>16777238</code><mode>keyboard</mode></slot></slots></button>
+      <button index="8"><slots><slot><code>16777239</code><mode>keyboard</mode></slot></slots></button>
+
+      <!-- SELECT = Space, START = Super -->
+      <button index="9"><slots><slot><code>32</code><mode>keyboard</mode></slot></slots></button>
+      <button index="10"><slots><slot><code>16777250</code><mode>keyboard</mode></slot></slots></button>
+
+      <!-- L3 / R3 = Space / Enter fallback -->
+      <button index="12"><slots><slot><code>32</code><mode>keyboard</mode></slot></slots></button>
+      <button index="13"><slots><slot><code>16777220</code><mode>keyboard</mode></slot></slots></button>
+    </set>
+  </sets>
+</joystick>
