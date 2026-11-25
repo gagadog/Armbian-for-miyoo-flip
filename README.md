@@ -8,6 +8,21 @@ an XFCE desktop: display, buttons, sticks, Wi-Fi, audio and HDMI all work.
 
 ---
 
+## ⚠️ Known issue: ghosting / whitening after screen-off or lid close
+
+After closing the lid (backlight off) or leaving the screen off for a long time, the
+panel can retain a ghost of the last frame and look washed out / whitened. It clears
+up by itself after a while, or after showing moving content with the backlight on.
+
+The cause is not confirmed: closing the lid only cuts the backlight, the panel keeps
+scanning the same frame, and a static image held for a long time is prone to image
+retention; it may also be a liquid-crystal bias effect from how the backlight is
+switched off. **Whether this can permanently damage the panel is unknown.** If you are
+worried, avoid storing the device lid-closed / screen-off for long periods; for long
+storage keep the screen on with content that changes.
+
+---
+
 ## Image
 
 | | |

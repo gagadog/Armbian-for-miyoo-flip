@@ -479,6 +479,12 @@ BUILD=/data/build scripts/fold-v7.sh
 
 ## 已知问题 / TODO
 
+- **残影 / 泛白**：合盖或背光关闭放置一段时间后，面板会留下上一帧的残影并整体泛白，
+  放一段时间自行恢复。当前合盖只写 `brightness=0`（`pwm-backlight` 关掉 PWM），
+  DSI 仍在持续扫描同一帧，静态画面长时间保持容易产生影像残留；也不排除是背光直接
+  切断导致的液晶偏置。**对面板是否有永久影响未知。** 可能的改进方向：合盖时把面板
+  切到 DSI sleep（`panel-generic-dsi` 的 unprepare / `MIPI_DCS_SET_DISPLAY_OFF`），
+  或改为不关 PWM、只把占空比降到最低而非 0 —— 都未验证
 - **蓝牙**：需要 btrtl 补丁（ROCKNIX 的
   `0005-Bluetooth-btrtl-Add-the-support-for-RTL8733BU.patch`）+ BT 固件，
   且要处理与 WiFi 共用 USB 设备的 reset 冲突
